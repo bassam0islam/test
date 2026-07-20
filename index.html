@@ -26,7 +26,6 @@
             font-family: 'Montserrat', sans-serif;
             color: var(--text-dark);
             position: relative;
-            /* Full Floral Pattern Background */
             background-image: radial-gradient(rgba(255, 240, 243, 0.45), rgba(253, 225, 230, 0.65)),
                               url('https://images.unsplash.com/photo-1526047932273-341f2a7631f9?q=80&w=1000&auto=format&fit=crop');
             background-size: cover;
@@ -35,7 +34,6 @@
             background-attachment: fixed;
         }
 
-        /* --- Fullscreen Falling Petals Overlay --- */
         #petals {
             position: fixed;
             top: 0;
@@ -57,16 +55,8 @@
         }
 
         @keyframes fall {
-            0% {
-                top: -10%;
-                transform: translateX(0) rotate(0deg);
-                opacity: 0.9;
-            }
-            100% {
-                top: 105vh;
-                transform: translateX(80px) rotate(360deg);
-                opacity: 0.2;
-            }
+            0% { top: -10%; transform: translateX(0) rotate(0deg); opacity: 0.9; }
+            100% { top: 105vh; transform: translateX(80px) rotate(360deg); opacity: 0.2; }
         }
 
         .screen {
@@ -89,23 +79,42 @@
             z-index: -1;
         }
 
-        /* --- Animations --- */
         .fade-in {
             animation: fadeInUp 0.8s ease forwards;
         }
 
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- Lock Screen --- */
+        /* --- Audio Button --- */
+        #mute-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(224, 122, 130, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            font-size: 1.2rem;
+            display: none; /* Hidden until unlocked */
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10000;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        #mute-btn:active {
+            transform: scale(0.9);
+            background: #ffeef0;
+        }
+
         #lock-screen {
             justify-content: center;
             background: rgba(255, 235, 238, 0.5);
@@ -182,7 +191,6 @@
             background-color: #ffeef0;
         }
 
-        /* --- Main Content (iPhone 14 Layout) --- */
         #main-content {
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
@@ -232,7 +240,6 @@
             line-height: 1.4;
         }
 
-        /* --- Puzzle (Mobile Friendly) --- */
         #puzzle-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -271,7 +278,6 @@
             animation: pulse 2s infinite;
         }
 
-        /* --- Letter --- */
         .letter-text {
             font-family: 'Arial', sans-serif;
             font-size: 1rem;
@@ -285,7 +291,6 @@
             border-right: 4px solid var(--primary);
         }
 
-        /* --- Things I know about you --- */
         .things-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -315,7 +320,6 @@
             color: var(--text-dark);
         }
 
-        /* --- Counter --- */
         .counter-box {
             display: flex;
             justify-content: space-between;
@@ -350,6 +354,14 @@
     </style>
 </head>
 <body>
+
+    <!-- Background Music Audio Tag -->
+    <audio id="bg-music" loop>
+        <source src="music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Mute/Unmute Button -->
+    <button id="mute-btn" onclick="toggleMute()">🔊</button>
 
     <!-- Fullscreen Petals Overlay -->
     <div id="petals"></div>
@@ -447,6 +459,20 @@
     </div>
 
     <script>
+        // --- AUDIO CONTROLS ---
+        const audio = document.getElementById('bg-music');
+        const muteBtn = document.getElementById('mute-btn');
+
+        function toggleMute() {
+            if (audio.muted) {
+                audio.muted = false;
+                muteBtn.innerText = "🔊";
+            } else {
+                audio.muted = true;
+                muteBtn.innerText = "🔇";
+            }
+        }
+
         // --- PETAL GENERATOR (FULLSCREEN) ---
         function createPetals() {
             const container = document.getElementById('petals');
@@ -498,6 +524,11 @@
             if (currentPin === targetPin) {
                 document.getElementById('lock-screen').classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
+                
+                // Play music and show mute button when PIN is correct!
+                audio.play().catch(error => console.log("Audio play blocked by browser:", error));
+                muteBtn.style.display = 'flex';
+
                 initPuzzle();
             } else {
                 const dotsContainer = document.getElementById('dots-container');
