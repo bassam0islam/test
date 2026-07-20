@@ -88,31 +88,63 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- Audio Button --- */
-        #mute-btn {
+        /* --- Audio Controls & Greeting Wrapper --- */
+        #audio-controls-container {
             position: fixed;
-            bottom: 25px;
+            bottom: 20px;
             right: 20px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            z-index: 10000;
+        }
+
+        .greeting-badge {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            border: 1px solid rgba(224, 122, 130, 0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            white-space: nowrap;
+        }
+
+        .controls-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
+            padding: 6px 10px;
+            border-radius: 25px;
             border: 1px solid rgba(224, 122, 130, 0.4);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            font-size: 1.2rem;
-            display: none; /* Hidden until unlocked */
-            justify-content: center;
-            align-items: center;
+        }
+
+        #volume-slider {
+            width: 70px;
+            accent-color: var(--primary-dark);
             cursor: pointer;
-            z-index: 10000;
-            transition: transform 0.2s, background 0.2s;
+        }
+
+        #mute-btn {
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #mute-btn:active {
             transform: scale(0.9);
-            background: #ffeef0;
         }
 
         #lock-screen {
@@ -356,12 +388,18 @@
 <body>
 
     <!-- Background Music Audio Tag -->
-    <audio id="bg-music" loop>
+    <audio id="bg-music" loop preload="auto">
         <source src="music.mp3" type="audio/mpeg">
     </audio>
 
-    <!-- Mute/Unmute Button -->
-    <button id="mute-btn" onclick="toggleMute()">🔊</button>
+    <!-- Audio Controls Container -->
+    <div id="audio-controls-container">
+        <div class="greeting-badge">Hello Nada, Happy Birthday 🤍</div>
+        <div class="controls-row">
+            <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.8" oninput="adjustVolume(this.value)">
+            <button id="mute-btn" onclick="toggleMute()">🔊</button>
+        </div>
+    </div>
 
     <!-- Fullscreen Petals Overlay -->
     <div id="petals"></div>
@@ -459,17 +497,55 @@
     </div>
 
     <script>
-        // --- AUDIO CONTROLS ---
+        // --- AUDIO CONTROLS & AUTO-PLAY ---
         const audio = document.getElementById('bg-music');
         const muteBtn = document.getElementById('mute-btn');
+        const volumeSlider = document.getElementById('volume-slider');
+
+        let hasPlayed = false;
+
+        function playAudioAtTwelve() {
+            if (!hasPlayed) {
+                audio.currentTime = 12;
+                audio.play().then(() => {
+                    hasPlayed = true;
+                }).catch(err => {
+                    console.log("Autoplay blocked by browser until user interaction.");
+                });
+            }
+        }
+
+        // Try playing immediately when page loads
+        window.addEventListener('load', () => {
+            playAudioAtTwelve();
+        });
+
+        // Fallback: If browser blocks autoplay, play on very first screen interaction
+        document.addEventListener('click', () => {
+            if (!hasPlayed) {
+                playAudioAtTwelve();
+            }
+        }, { once: true });
+
+        function adjustVolume(val) {
+            audio.volume = val;
+            if (val == 0) {
+                muteBtn.innerText = "🔇";
+            } else {
+                muteBtn.innerText = "🔊";
+                audio.muted = false;
+            }
+        }
 
         function toggleMute() {
             if (audio.muted) {
                 audio.muted = false;
                 muteBtn.innerText = "🔊";
+                volumeSlider.value = audio.volume || 0.8;
             } else {
                 audio.muted = true;
                 muteBtn.innerText = "🔇";
+                volumeSlider.value = 0;
             }
         }
 
@@ -524,11 +600,6 @@
             if (currentPin === targetPin) {
                 document.getElementById('lock-screen').classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
-                
-                // Play music and show mute button when PIN is correct!
-                audio.play().catch(error => console.log("Audio play blocked by browser:", error));
-                muteBtn.style.display = 'flex';
-
                 initPuzzle();
             } else {
                 const dotsContainer = document.getElementById('dots-container');
